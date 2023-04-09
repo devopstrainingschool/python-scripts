@@ -1,0 +1,74 @@
+import os
+
+import paramiko
+
+# Get server IP address and credentials from user
+
+server_ip = input("Enter server IP address: ")
+
+ssh_username = input("Enter SSH username: ")
+
+ssh_password = input("Enter SSH password: ")
+
+# Set up SSH client and connect to server
+
+ssh_client = paramiko.SSHClient()
+
+ssh_client.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+
+try:
+
+    ssh_client.connect(hostname=server_ip, username=ssh_username, password=ssh_password)
+
+except paramiko.AuthenticationException as e:
+
+    print("Error connecting to server: " + str(e))
+
+    exit()
+
+# Get new user's username and password from user
+
+new_username = input("Enter new username: ")
+
+new_password = input("Enter new password: ")
+
+# Add new user to server
+
+try:
+
+    # Run the useradd command to add the user to the system
+
+    stdin, stdout, stderr = ssh_client.exec_command("sudo useradd -m " + new_username)
+
+    # Check if the useradd command succeeded
+
+    if stderr.read():
+
+        raise OSError("User creation failed: " + stderr.read().decode())
+
+    # Set the user's password
+
+    stdin, stdout, stderr = ssh_client.exec_command("echo " + new_password + " | sudo passwd " + new_username)
+
+    # Check if the passwd command succeeded
+
+    if stderr.read():
+
+        raise OSError("Password setting failed: " + stderr.read().decode())
+
+    # Print success message
+
+    print("User " + new_username + " created successfully!")
+
+    
+
+except OSError as e:
+
+    # Print error message if user creation or password setting fails
+
+    print("Error creating user: " + str(e))
+
+# Close the SSH connection
+
+ssh_client.close()
+
